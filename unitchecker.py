@@ -26,31 +26,34 @@ class UnitChecker:
 
   def get_lab_list(self, path):
     if not os.path.exists(path):
-      return null
+      return None
     return glob.glob(self.join(path, 'lab*'))
 
   def get_hw_list(self, path):
     if not os.path.exists(path):
-      return null
+      return None
     return glob.glob(self.join(path, 'hw*'))
 
   def get_file_list(self, path):
     if not os.path.exists(path):
-      return null
+      return None
     return glob.glob(self.join(path, '*.java'))
 
   def compile_java(self, path, file):
+    FNULL = open(os.devnull, 'w')
     junit = str(self.config['java']['junit_lib'])
     java_path = str(self.config['java']['java_bin_path'])
-    cmd = java_path + '/javac -cp ' + junit + ':' + path + ' ' + file
-    proc = subprocess.Popen(cmd, shell=True)
+    command = [self.join(java_path,'javac'), '-cp', junit + ':' + path, file]
+    proc = subprocess.Popen(command, stdout=FNULL, stderr=FNULL, shell=False)
+    proc.wait()
   
   def run_unittest(self, path, java_class):
     #FIXME make assumption here that file will ended with .java
+    FNULL = open(os.devnull, 'w')
     junit = str(self.config['java']['junit_lib'])
     java_path = str(self.config['java']['java_bin_path'])
-    command = [self.join(java_path,'java') , '-cp', junit + ':' + path, 'org.junit.runner.JUnitCore',java_class]
-    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=None, shell=False)
+    command = [self.join(java_path,'java') , '-cp', path + ':' + junit, 'org.junit.runner.JUnitCore',java_class]
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=FNULL, shell=False)
     return(process.communicate()[0])
 
   def process_git(self, org, repo):
@@ -60,20 +63,24 @@ class UnitChecker:
     gh = Github(login_or_token=gitToken)
 
     prs = gh.get_organization(org).get_repo(repo).get_pulls()
-    result = {}
+    results = []
     for pr in prs:
+      result = {}
       result['title'] = pr.title
-      #print(pr.title)
       result['git_url'] = pr.head.repo.git_url
-      #print(pr.head.repo.git_url)
       local_path = self.join('/tmp', str(pr.head.repo.id))
-      #self.remove_folder(local_path)
-      #Repo.clone_from(pr.head.repo.git_url, local_path)
+      #id = str(pr.head.repo.id)
+      #if id != '66341762':
+      #  continue;
+      self.remove_folder(local_path)
+      Repo.clone_from(pr.head.repo.git_url, local_path)
       result['tests'] = {}
       if repo.endswith('lab'):
         dir_list = self.get_lab_list(local_path)
       else:
         dir_list = self.get_hw_list(local_path)
+      if dir_list is None:
+        return None
       for dir in dir_list:
         src_dir = self.join(dir, 'src')
         for java_file in self.get_file_list(src_dir):
@@ -83,13 +90,14 @@ class UnitChecker:
             (head, tail) = os.path.split(java_file)
             java_class = tail[:-5]
             ret_list = self.run_unittest(src_dir, java_class).decode('utf-8').split('\n')
-            if ret_list[3].endswith('failures:'):
-              result['tests'][java_class] = ret_list[3]
+            if ret_list[4].startswith('OK'):
+              result['tests'][java_class] = 'OK'
             else:
-              result['tests'][java_class] = ret_list[4]
-            #print(ret_list[4])
-      break
-    return(result)
-uc = UnitChecker()
-result = uc.process_git('cpe200-159-sec1','cpe200-week1-lab')
-pprint(result)
+              result['tests'][java_class] = 'FAIL'
+      results.append(result)
+    return(results)
+#uc = UnitChecker()
+#org = 'cpe200-159-sec1'
+#repo = 'cpe200-week2-lab'
+#result = uc.process_git(org, repo)
+#pprint(result)

@@ -12,7 +12,7 @@ from pprint import pprint
 class UnitChecker:
   config = configparser.ConfigParser()
   def __init__(self):
-    self.config.read('config.ini')
+    self.config.read('/var/www/grading/config.ini')
 
   def join(self, path1, path2):
     return os.path.join(path1, path2)

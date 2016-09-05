@@ -8,6 +8,7 @@ from pprint import pformat
 from flask import Response
 
 app = Flask(__name__)
+app.debug = True
 
 #def stream_template(template_name, **context):
 
@@ -26,5 +27,5 @@ def test():
   else:
     return 'you shouldn\'t be here'
 
-if __name__ == "__main__":
-  app.run(debug=True)
+#if __name__ == "__main__":
+#  app.run(debug=True)

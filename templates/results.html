@@ -1,0 +1,37 @@
+<html>
+  <body>
+    <h3>Org:{{ org }}</h3>
+    <h3>Repo:{{ repo }}</h3>
+    <table border=1>
+      <tr><td>Title(StudentID)></td><td>Repo</td><td>UnitTest Result</td></tr>
+      {% for result in results %}
+      <tr>
+        <td>
+          {{ result.title }}
+        </td>
+        <td>
+            <table>
+          {% for test in result.tests %}
+          <tr>
+            <td>
+             {{ test }}
+             </td>
+             {% if result.tests[test] == 'OK' %}
+             <td bgcolor="green">
+             {% else %}
+             <td bgcolor="red">
+             {% endif %}
+             {{result.tests[test]}} 
+             </td>
+          <tr>
+          {% endfor %}
+            </table>
+        </td>
+        <td>
+          {{ result.git_url }}
+        </td>
+        </tr>
+      {% endfor %} {# results #}
+    </table>
+  </body>
+</html>

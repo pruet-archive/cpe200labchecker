@@ -1,4 +1,5 @@
 .vscode/
 *.swp
 config.ini
+__pycache__/
 grading.wsgi
